@@ -1,244 +1,188 @@
 #!/usr/bin/make -f
 # Set environment variables
+
+# this makefile follows the below conventions for variables denoting files and directories
+# all directory names must end with a terminal '/' character
+# file names never end in terminal '/' character
+
+
 #===================================================
 
 SHELL = /bin/bash
+
+# set this variable if using shared library, to any value (cleaning existing build files may be necessary).
+SHARED =
 
 #===================================================
 # Compile commands
 #===================================================
 CC       = gcc
-CXX      = g++
 CLIBS    =
-CXXLIBS  =
+INCLUDES =
 CFLAGS   = -g -O -Wall
+CXX      = g++
+CXXLIBS  =
+CXXINCLUDES =
 CXXFLAGS = -g -O -Wall
+ifdef SHARED
+CFLAGS   += -fpie
+CXXFLAGS += -fpie
+endif
+ifdef SHARED
+CRPATH   =
+CXXRPATH =
+endif
 #===================================================
 # Build Directories
 #===================================================
-srcdir   = ./src
-buildir  = ./build
+override srcdir     = src/
+override buildir    = build/
 #===================================================
 # Install directories
 #===================================================
-prefix      = /usr/local
-exec_prefix = $(prefix)
-bindir      = $(exec_prefix)/bin
-datarootdir = $(prefix)/share
-datadir     = $(datarootdir)
 DESTDIR     =
+prefix      = /usr/local/
+override exec_prefix = $(prefix)
+override bindir      = $(exec_prefix)/bin/
+override datarootdir = $(prefix)/share/
+override datadir     = $(datarootdir)
+override libdir      = $(prefix)/lib/
 #===================================================
-INSTALL         = install -D
-INSTALL_PROGRAM = $(INSTALL) -m 755
-INTALL_DATA     = $(INSTALL) -m 644
-#===================================================
-# Names of programs
-#===================================================
-prog_name = mainc
+prog_name    = mainc
 cxxprog_name = maincxx
-# Error if names are same, to avoid conflict
-ifeq ($(strip $(prog_name)), $(strip $(cxxprog_name)))
-    $(error "'cxxprog_name' and 'prog_name' cannot be the same")
-endif
-#====================================================
+#===================================================
+override INSTALL          = install -D -p
+override INSTALL_PROGRAM  = $(INSTALL) -m 755
+override INSTALL_DATA     = $(INSTALL) -m 644
+#===================================================
 # Source and target objects
 #===================================================
-SRC_C     = $(wildcard $(srcdir)/*.c)
-SRC_CXX1  = $(wildcard $(srcdir)/*.cc)
-SRC_CXX2  = $(wildcard $(srcdir)/*.cpp)
-SRC_CXX   = $(SRC_CXX1) $(SRC_CXX2)
-OBJS_C    = $(patsubst %.c,%.o,$(subst $(srcdir)/,$(buildir)/c,$(SRC_C)))
-OBJS_CXX1 = $(patsubst %.cc,%.o,$(subst $(srcdir)/,$(buildir)/cc,$(SRC_CXX1)))
-OBJS_CXX2 = $(patsubst %.cpp,%.o,$(subst $(srcdir)/,$(buildir)/cc,$(SRC_CXX2)))
-OBJS_CXX  = $(filter-out $(OBJS_CXX2),$(OBJS_CXX1)) $(OBJS_CXX2)
-MK_C      = $(patsubst %.c,%.mk,$(subst $(srcdir)/,$(buildir)/Make-list/makec-,$(SRC_C)))
-MK_CXX1   = $(patsubst %.cc,%.mk,$(subst $(srcdir)/,$(buildir)/Make-list/makecc-,$(SRC_CXX1)))
-MK_CXX2   = $(patsubst %.cpp,%.mk,$(subst $(srcdir)/,$(buildir)/Make-list/makecc-,$(SRC_CXX2)))
-MK_CXX    = $(filter-out $(MK_CXX2),$(MK_CXX1)) $(MK_CXX2)
+CXX1SRCS  = $(wildcard $(srcdir)*.cpp)
+CXX2SRCS  = $(wildcard $(srcdir)*.cxx)
+CXXSRCS   = $(CXX1SRCS) $(CXX2SRCS)
+CXXOBJS   = $(patsubst $(srcdir)%.cpp,$(buildir)cpp%.o,$(CXX1SRCS)) $(patsubst $(srcdir)%.cxx,$(buildir)cxx%.o,$(CXX2SRCS))
+CXXMKS    = $(patsubst $(srcdir)%.cpp,$(buildir)pp%.mk,$(CXX1SRCS)) $(patsubst $(srcdir)%.cxx,$(buildir)xx%.mk,$(CXX2SRCS))
+CSRCS     = $(wildcard $(srcdir)*.c)
+COBJS     = $(patsubst $(srcdir)%.c,$(buildir)c%.o,$(CSRCS))
+CMKS      = $(patsubst $(srcdir)%.c,$(buildir)%.mk,$(CSRCS))
 #=====================================================
 
 build: build-c build-c++
-.PHONY: build
+.PHONY:build
 
-install: install-c install-c++
-.PHONY: install
-
-install-c: build-c
-	@[ -f "$(DESTDIR)$(bindir)/$(prog_name)" ] && { \
-		echo -e "\e[35mWarning\e[0m: file named \"$(prog_name)\" exits at \"$(DESTDIR)$(bindir)/$(prog_name)\""; \
-		echo "Defualt behavoir is not to overwrite."; \
-	} || { \
-		echo "Installing file \"$(prog_name)\" at \"$(DESTDIR)$(bindir)/$(prog_name)\""; \
-		$(INSTALL_PROGRAM) $(buildir)/$(prog_name) -T $(DESTDIR)$(bindir)/$(prog_name); \
-	}
-.PHONY: install-c
-
-install-c++: build-c++
-	@[ -f "$(DESTDIR)$(bindir)/$(cxxprog_name)" ] && { \
-		echo -e "\e[35mWarning\e[0m: file named \"$(cxxprog_name)\" exits at \"$(DESTDIR)$(bindir)/$(cxxprog_name)\""; \
-		echo "Defualt behavoir is not to overwrite."; \
-	} || { \
-		echo "Installing file \"$(cxxprog_name)\" at \"$(DESTDIR)$(bindir)/$(cxxprog_name)\""; \
-		$(INSTALL_PROGRAM) $(buildir)/$(cxxprog_name) -T $(DESTDIR)$(bindir)/$(cxxprog_name); \
-	}
-.PHONY: install-c++
-
-debug:
-	@echo "current directory: $(startdir) : $(CURDIR)"
-	@echo "MAKE : $(MAKE) $(MAKEFLAGS)"
-	@echo "------------------------------------->"
-	@echo "source files c   : $(SRC_C)"
-	@echo "source files c++ : $(SRC_CXX)"
-	@echo "------------------------------------->"
-	@echo "object files c   : $(OBJS_C)"
-	@echo "object files c++ : $(OBJS_CXX)"
-	@echo "------------------------------------->"
-	@echo "make files c     : $(MK_C)"
-	@echo "make files c++   : $(MK_CXX)"
-	@echo "------------------------------------->"
-	@echo "source files cc  : $(SRC_CXX1)"
-	@echo "source files cpp : $(SRC_CXX2)"
-	@echo "object files cc  : $(OBJS_CXX1)"
-	@echo "object files cpp : $(OBJS_CXX2)"
-	@echo "make files cc    : $(MK_CXX1)"
-	@echo "make files cpp   : $(MK_CXX2)"
-	@echo "------------------------------------->"
-.PHONY: debug
-
-build-c++: $(buildir)/$(cxxprog_name)
+build-c++: $(buildir)$(cxxprog_name)
 .PHONY: build-c++
 
-build-c: $(buildir)/$(prog_name)
+build-c: $(buildir)$(prog_name)
 .PHONY: build-c
 
-#==============================Build Instructions==================================
-$(buildir)/$(cxxprog_name):$(OBJS_CXX)
-	$(CXX) $(CXXFLAGS) $(OBJS_CXX) $(CXXLIBS) -o $(buildir)/$(cxxprog_name)
+install:install-c install-c++
+.PHONY:install
 
-$(buildir)/$(prog_name):$(OBJS_C)
-	$(CC) $(CFLAGS) $(OBJS_C) $(CLIBS) -o $(buildir)/$(prog_name)
+install-c: FILE = $(DESTDIR)$(bindir)$(prog_name)
+install-c:
+	@[ -f "$(FILE)" ] && { echo -e "\e[31mError\e[32m $$file exists Defualt behavior is not to overwrite...\e[0m Terminating..."; exit 24; } || true
+	$(INSTALL_PROGRAM) $(buildir)$(prog_name) -t $(DESTDIR)$(bindir)
+.PHONY:install-c
 
-$(MK_C): $(buildir)/Make-list/makec-%.mk : $(srcdir)/%.c dependlist.sh
-	@mkdir -p $(dir $@)
-	@./dependlist.sh "$<" "$(CC) $(CFLAGS) -c $< -o $(buildir)/c$*.o" > $@
-	@sed -i '1s/^/$(subst /,\/,$(buildir)/c)/' $@
-	@echo "Creating make file... $@"
+install-c++: FILE = $(DESTDIR)$(bindir)$(cxxprog_name)
+install-c++:
+	@[ -f "$(FILE)" ] && { echo -e "\e[31mError\e[32m $$file exists Defualt behavior is not to overwrite...\e[0m Terminating..."; exit 24; } || true
+	$(INSTALL_PROGRAM) $(buildir)$(cxxprog_name) -t $(DESTDIR)$(bindir)
+.PHONY:install-c++
 
-$(filter-out $(MK_CXX2),$(MK_CXX1)): $(buildir)/Make-list/makecc-%.mk : $(srcdir)/%.cc dependlist.sh
-	@mkdir -p $(dir $@)
-	@./dependlist.sh "$<" "$(CXX) $(CXXFLAGS) -c $< -o $(buildir)/cc$*.o" > $@
-	@sed -i '1s/^/$(subst /,\/,$(buildir)/cc)/' $@
-	@echo "Creating make file... $@"
-
-$(MK_CXX2): $(buildir)/Make-list/makecc-%.mk : $(srcdir)/%.cpp dependlist.sh
-	@mkdir -p $(dir $@)
-	@./dependlist.sh "$<" "$(CXX) $(CXXFLAGS) -c $< -o $(buildir)/cc$*.o" > $@
-	@sed -i '1s/^/$(subst /,\/,$(buildir)/cc)/' $@
-	@echo "Creating make file... $@"
-
-# $(OBJS_C): $(buildir)/c%.o : $(buildir)/Make-list/makec-%.mk
-# 	@$(MAKE) -C $(CURDIR) -f $< $(MAKEFLAGS)
-#
-# $(OBJS_CXX): $(buildir)/cc%.o : $(buildir)/Make-list/makecc-%.mk
-# 	@$(MAKE) -C $(CURDIR) -f $< $(MAKEFLAGS)
-
-include $(MK_C) $(MK_CXX)
-
-#==================================================================================
-
-clean:
-	rm -rf $(buildir)
-.PHONY: clean
-
-clean-c:
-	rm -f $(OBJS_C)
-	rm -f $(buildir)/$(prog_name)
-	rm -f $(buildir)/include-lists/makec-*.mk
-.PHONY: clean-c
-
-clean-c++:
-	rm -f $(OBJS_CXX)
-	rm -f $(buildir)/$(cxxprog_name)
-	rm -f $(buildir)/Make-list/makecc_*.mk
-.PHONY: clean-c++
-
-clean-all: clean
-	rm -f ./dependlist.sh
-.PHONY: clean-all
-
-uninstall-c:
-	rm -f $(DESTDIR)$(bindir)/$(prog_name)
-.PHONY: uninstall-c
-
-uninstall-c++:
-	rm -f $(DESTDIR)$(bindir)/$(cxxprog_name)
-.PHONY: uninstall-c++
-
-uninstall: uninstall-c uninstall-c++
-.PHONY: uninstall
+debug:
+	@echo -e "\e[35mC++ Source Files \e[0m: $(CXXSRCS)"
+	@echo -e "\e[35mC++ Make Files   \e[0m: $(CXXMKS)"
+	@echo -e "\e[35mC++ Object Files \e[0m: $(CXXOBJS)"
+	@echo    "#-------------------------------------------#"
+	@echo -e "\e[35mC Source Files   \e[0m: $(CSRCS)"
+	@echo -e "\e[35mC Make Files     \e[0m: $(CMKS)"
+	@echo -e "\e[35mC Object Files   \e[0m: $(COBJS)"
+	@echo -e "\e[35mmakeflages;makegoals\e[0m:$(MAKEFLAGS) ; $(MAKECMDGOALS)"
+.PHONY:debug
 
 help:
 	@echo "The follwing targets may be given..."
 	@echo -e "\t...install"
 	@echo -e "\t...install-c"
 	@echo -e "\t...install-c++"
-	@echo -e "\t...build"
+	@echo -e "\t...build*"
 	@echo -e "\t...build-c"
 	@echo -e "\t...build-c++"
 	@echo -e "\t...uninstall"
 	@echo -e "\t...uninstall-c"
 	@echo -e "\t...uninstall-c++"
 	@echo -e "\t...clean"
-	@echo -e "\t...clean-c"
-	@echo -e "\t...clean-c++"
-	@echo -e "\t...clean-all"
 	@echo "Other options"
-	@echo -e "\t...depend"
-	@echo -e "\t...depend-c"
-	@echo -e "\t...depend-c++"
 	@echo -e "\t...debug"
 	@echo -e "\t...help"
-.PHONY: help
+.PHONY:help
 
-hash := \#
-depend: depend-c depend-c++
-.PHONY: depend
+#=====================================================
 
-depend-c: dependlist.sh
-	@mkdir -p $(buildir)/Make-list
-	@for file in $(srcdir)/*.c; do \
-		name=$${file$(hash)$(hash)*/}; \
-		./dependlist.sh "$$file" "$(CC) $(CFLAGS) -c $$file -o $(buildir)/c$${name%.c}.o" > $(buildir)/Make-list/makec-$${name%.c}.mk; \
-		sed -i '1s/^/$(subst /,\/,$(buildir))\//' $(buildir)/Make-list/makec-$${name%.c}.mk; \
-		echo "Creating Make file... \"$(buildir)/Make-list/makec-$${name%.c}.mk\""; \
-	done
-.PHONY: depend
+$(buildir)$(prog_name): $(COBJS)
+ifndef SHARED
+	$(CC) $(CFLAGS) -o $@ $(INCLUDES) $(COBJS) $(CLIBS)
+else
+	$(CC) $(filter-out -pic -fpic -Fpic,$(CFLAGS)) -o $@ $(INCLUDES) -Wl,-rpath="$(RPATH)" $(COBJS) $(CLIBS)
+endif
 
-depend-c++: dependlist.sh
-	@mkdir -p $(buildir)/Make-list
-	@for file in $(srcdir)/*.cc; do \
-		name=$${file$(hash)$(hash)*/}; \
-		./dependlist.sh "$$file" "$(CC) $(CFLAGS) -c $$file -o $(buildir)/cc$${name%.cc}.o" > $(buildir)/Make-list/makecc-$${name%.cc}.mk; \
-		sed -i '1s/^/$(subst /,\/,$(buildir))\//' $(buildir)/Make-list/makecc-$${name%.cc}.mk; \
-		echo "Creating Make file... \"$(buildir)/Make-list/makecc-$${name%.cc}.mk\""; \
-	done
-	@for file in $(srcdir)/*.cpp; do \
-		name=$${file$(hash)$(hash)*/}; \
-		./dependlist.sh "$$file" "$(CC) $(CFLAGS) -c $$file -o $(buildir)/cc$${name%.cpp}.o" > $(buildir)/Make-list/makecc-$${name%.cpp}.mk; \
-		sed -i '1s/^/$(subst /,\/,$(buildir))\//' $(buildir)/Make-list/makecc-$${name%.cpp}.mk; \
-		echo "Creating Make file... \"$(buildir)/Make-list/makecc-$${name%.cpp}.mk\""; \
-	done
-.PHONY: depend-c++
+$(buildir)$(cxxprog_name): $(CXXOBJS)
+ifndef SHARED
+	$(CXX) $(CXXFLAGS) -o $@ $(CXXINCLUDES) $(CXXOBJS) $(CXXLIBS)
+else
+	$(CXX) $(filter-out -pic -fpic -Fpic,$(CXXFLAGS)) -o $@ $(CXXINCLUDES) -Wl,-rpath="$(RPATH)" $(CXXOBJS) $(CXXLIBS)
+endif
 
-dependlist.sh:
-	@echo -e "$(hash)!/bin/bash"\
-	"\n$(hash) Generated by makefile, DO NOT EDIT!"\
-	"\n[ -f \"\$$1\" ] && {"\
-	"\n\tgcc -M \"\$$1\""\
-	"\n\techo -e \"\\\\t\$$2\""\
-	"\n\texit 0"\
-	"\n} || {"\
-	"\n\texit 1"\
-	"\n}" >> dependlist.sh
-	@chmod u+x,g+x dependlist.sh
-	@echo "srcipt: dependlist.sh generated."
+$(buildir)%.mk : $(srcdir)%.c
+	@mkdir -p $(@D)
+ifndef SHARED
+	@$(CC) -M $< | awk '{ if(/^$(subst .mk,,$(@F))/) { printf("%s%s\n","$(@D)/c",$$0) } else { print $$0 } } END { printf("\t$(CC) $(CFLAGS) -c -o $(buildir)c$*.o $<")}' > $@
+else
+	@$(CC) -M $< | awk '{ if(/^$(subst .mk,,$(@F))/) { printf("%s%s\n","$(@D)/c",$$0) } else { print $$0 } } END { printf("\t$(CC) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CFLAGS)) -c -o $(buildir)c$*.o $<")}' > $@
+endif
+	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
+
+$(buildir)pp%.mk : $(srcdir)%.cpp
+	@mkdir -p $(@D)
+ifndef SHARED
+	@$(CXX) -M $< | awk '{ if(/^$(patsubst pp%.mk,%,$(@F))/) { printf("%s%s\n","$(@D)/cpp",$$0) } else { print $$0 } } END { printf("\t$(CXX) $(CXXFLAGS) -c -o $(buildir)cpp$*.o $<")}' > $@
+else
+	@$(CXX) -M $< | awk '{ if(/^$(patsubst pp%.mk,%,$(@F))/) { printf("%s%s\n","$(@D)/cpp",$$0) } else { print $$0 } } END { printf("\t$(CXX) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CXXFLAGS)) -c -o $(buildir)cpp$*.o $<")}' > $@
+endif
+	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
+
+$(buildir)xx%.mk : $(srcdir)%.cxx
+	@mkdir -p $(@D)
+ifndef SHARED
+	@$(CXX) -M $< | awk '{ if(/^$(patsubst xx%.mk,%,$(@F))/) { printf("%s%s\n","$(@D)/cxx",$$0) } else { print $$0 } } END { printf("\t$(CXX) $(CXXFLAGS) -c -o $(buildir)cxx$*.o $<")}' > $@
+else
+	@$(CXX) -M $< | awk '{ if(/^$(patsubst xx%.mk,%,$(@F))/) { printf("%s%s\n","$(@D)/cxx",$$0) } else { print $$0 } } END { printf("\t$(CXX) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CXXFLAGS)) -c -o $(buildir)cxx$*.o $<")}' > $@
+endif
+	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
+
+ifneq ($(strip $(filter build $(buildir)$(prog_name) $(OBJS),$(MAKECMDGOALS))),)
+include $(CMKS) $(CXXMKS)
+else ifeq ($(MAKECMDGOALS),)
+include $(CMKS) $(CXXMKS)
+endif
+
+#=====================================================
+
+clean:
+	rm -rf $(buildir)
+.PHONY:clean
+
+uninstall:uninstall-c uninstall-c++
+.PHONY:uninstall
+
+uninstall-c: FILE = $(DESTDIR)$(bindir)$(prog_name)
+uninstall-c:
+	rm -f $(FILE)
+.PHONY:uninstall
+
+uninstall-c++: FILE = $(DESTDIR)$(bindir)$(cxxprog_name)
+uninstall-c++:
+	rm -f $(FILE)
+.PHONY:uninstall

@@ -6,25 +6,30 @@ This would represent the structure:
 <current directory>
         |
         |-<srcdir>
-        |    |-<cfiles>
-        |    |-<c++ files>
+        |    |-<cfiles>*
+        |    |-<c++ files>*
         |
         |-<buildir>
-        |    |-<c object files>
-        |    |-<cxx object files>
-        |    |-<executables>
+        |    |-<<make files>*
+        |    |-<c object files>*
+        |    |-<cxx object files>*
+        |    |-<executables>*
         |
         |-<Makefile>
-        |-<helper scripts>
+        |
+
+note: * at the end signifies more than one.
 
 The following variables give more control over the build proccess
 #====Compiler flags====#
 CC		(defualt 'gcc')
 CLIBS		(defualt no value)
 CFLAGS		(defualt '-g -O -Wall')
+INCLUDES	(defined no value)
 CXX		(defualt 'g++')
 CXXLIBS		(defualt no value)
 CXXFLAGS	(defualt '-g -O -Wall')
+CXXINCLUDES	(defined no value)
 #====Install configuration====#
 prefix		(/usr/local)
 DESTDIR		(defualt no value)
