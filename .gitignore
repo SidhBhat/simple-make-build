@@ -1,0 +1,15 @@
+#build files
+*.[oa]
+*.out
+*.so
+#build directory
+build/
+#subdirectories of source
+/src/**/
+
+#the versionlog file
+/versionlog.txt
+
+#generated script files
+/dependlist.sh
+/headersearch.sh

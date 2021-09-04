@@ -1,0 +1,39 @@
+This Makefile builds all c and c++ files into independant executable files.
+The source files are taken from the directory defined by variable 'srcdir', and built in irectory defined by variable 'buildir'.
+
+This would represent the structure:
+==========
+<current directory>
+        |
+        |-<srcdir>
+        |    |-<cfiles>
+        |    |-<c++ files>
+        |
+        |-<buildir>
+        |    |-<c object files>
+        |    |-<cxx object files>
+        |    |-<executables>
+        |
+        |-<Makefile>
+        |-<helper scripts>
+
+the following variables give more control over the build proccess
+#====Compiler flags====#
+CC		(defualt 'gcc')
+CLIBS		(defualt no value)
+CFLAGS		(defualt '-g -O -Wall')
+CXX		(defualt 'g++')
+CXXLIBS		(defualt no value)
+CXXFLAGS	(defualt '-g -O -Wall')
+#====Install configuration====#
+prefix		(/usr/local)
+DESTDIR		(defualt no value)
+#====Program Names====#
+prog_name	(defualt 'mainc')
+cxxprog_name	(defualt 'maincxx')
+#=====================#
+
+The variables:
+srcdir		(value './src')
+buildir		(value './build')
+Are not meant to be set from commandline!
