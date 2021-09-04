@@ -9,7 +9,3 @@ build/
 
 #the versionlog file
 /versionlog.txt
-
-#generated script files
-/dependlist.sh
-/headersearch.sh

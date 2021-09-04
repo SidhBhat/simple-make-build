@@ -16,7 +16,6 @@ CXXFLAGS = -g -O -Wall
 #===================================================
 # Build Directories
 #===================================================
-startdir = $(CURDIR)
 srcdir   = ./src
 buildir  = ./build
 #===================================================
@@ -48,10 +47,14 @@ SRC_C     = $(wildcard $(srcdir)/*.c)
 SRC_CXX1  = $(wildcard $(srcdir)/*.cc)
 SRC_CXX2  = $(wildcard $(srcdir)/*.cpp)
 SRC_CXX   = $(SRC_CXX1) $(SRC_CXX2)
-OBJS_C    = $(patsubst %.c,%.o,$(subst $(srcdir),$(buildir),$(SRC_C)))
-OBJS_CXX1 = $(patsubst %.cc,%.o,$(subst $(srcdir),$(buildir),$(SRC_CXX1)))
-OBJS_CXX2 = $(patsubst %.cpp,%.o,$(subst $(srcdir),$(buildir),$(SRC_CXX2)))
+OBJS_C    = $(patsubst %.c,%.o,$(subst $(srcdir)/,$(buildir)/c,$(SRC_C)))
+OBJS_CXX1 = $(patsubst %.cc,%.o,$(subst $(srcdir)/,$(buildir)/cc,$(SRC_CXX1)))
+OBJS_CXX2 = $(patsubst %.cpp,%.o,$(subst $(srcdir)/,$(buildir)/cc,$(SRC_CXX2)))
 OBJS_CXX  = $(filter-out $(OBJS_CXX2),$(OBJS_CXX1)) $(OBJS_CXX2)
+MK_C      = $(patsubst %.c,%.mk,$(subst $(srcdir)/,$(buildir)/Make-list/makec-,$(SRC_C)))
+MK_CXX1   = $(patsubst %.cc,%.mk,$(subst $(srcdir)/,$(buildir)/Make-list/makecc-,$(SRC_CXX1)))
+MK_CXX2   = $(patsubst %.cpp,%.mk,$(subst $(srcdir)/,$(buildir)/Make-list/makecc-,$(SRC_CXX2)))
+MK_CXX    = $(filter-out $(MK_CXX2),$(MK_CXX1)) $(MK_CXX2)
 #=====================================================
 
 build: build-c build-c++
@@ -81,14 +84,25 @@ install-c++: build-c++
 .PHONY: install-c++
 
 debug:
-	@echo -e "source files c   : $(SRC_C)"
-	@echo -e "object files c   : $(OBJS_C)"
-	@echo -e "source files cc  : $(SRC_CXX1)"
-	@echo -e "source files cpp : $(SRC_CXX2)"
-	@echo -e "source files c++ : $(SRC_CXX)"
-	@echo -e "object files cc  : $(OBJS_CXX1)"
-	@echo -e "object files cpp : $(OBJS_CXX2)"
-	@echo -e "object files c++ : $(OBJS_CXX)"
+	@echo "current directory: $(startdir) : $(CURDIR)"
+	@echo "MAKE : $(MAKE) $(MAKEFLAGS)"
+	@echo "------------------------------------->"
+	@echo "source files c   : $(SRC_C)"
+	@echo "source files c++ : $(SRC_CXX)"
+	@echo "------------------------------------->"
+	@echo "object files c   : $(OBJS_C)"
+	@echo "object files c++ : $(OBJS_CXX)"
+	@echo "------------------------------------->"
+	@echo "make files c     : $(MK_C)"
+	@echo "make files c++   : $(MK_CXX)"
+	@echo "------------------------------------->"
+	@echo "source files cc  : $(SRC_CXX1)"
+	@echo "source files cpp : $(SRC_CXX2)"
+	@echo "object files cc  : $(OBJS_CXX1)"
+	@echo "object files cpp : $(OBJS_CXX2)"
+	@echo "make files cc    : $(MK_CXX1)"
+	@echo "make files cpp   : $(MK_CXX2)"
+	@echo "------------------------------------->"
 .PHONY: debug
 
 build-c++: $(buildir)/$(cxxprog_name)
@@ -97,40 +111,40 @@ build-c++: $(buildir)/$(cxxprog_name)
 build-c: $(buildir)/$(prog_name)
 .PHONY: build-c
 
+#==============================Build Instructions==================================
+$(buildir)/$(cxxprog_name):$(OBJS_CXX)
+	$(CXX) $(CXXFLAGS) $(OBJS_CXX) $(CXXLIBS) -o $(buildir)/$(cxxprog_name)
 
-#=====================================================
-$(buildir)/$(cxxprog_name): $(OBJS_CXX)
-	$(CXX) $(CXXFLAGS) $(CXXLIBS) $(OBJS_CXX) -o $(buildir)/$(cxxprog_name)
+$(buildir)/$(prog_name):$(OBJS_C)
+	$(CC) $(CFLAGS) $(OBJS_C) $(CLIBS) -o $(buildir)/$(prog_name)
 
-$(buildir)/$(prog_name): $(OBJS_C)
-	$(CC) $(CFLAGS) $(CLIBS) $(OBJS_C) -o $(buildir)/$(prog_name)
+$(MK_C): $(buildir)/Make-list/makec-%.mk : $(srcdir)/%.c dependlist.sh
+	@mkdir -p $(dir $@)
+	@./dependlist.sh "$<" "$(CC) $(CFLAGS) -c $< -o $(buildir)/c$*.o" > $@
+	@sed -i '1s/^/$(subst /,\/,$(buildir)/c)/' $@
+	@echo "Creating make file... $@"
 
-$(OBJS_C): $(buildir)/%.o : $(srcdir)/%.c $(buildir)/include-lists/include-listc_%.txt ./headersearch.sh
-	@./headersearch.sh $(filter %.txt,$^) $<
-	$(CC) $(CFLAGS) -c $< -o $@
+$(filter-out $(MK_CXX2),$(MK_CXX1)): $(buildir)/Make-list/makecc-%.mk : $(srcdir)/%.cc dependlist.sh
+	@mkdir -p $(dir $@)
+	@./dependlist.sh "$<" "$(CXX) $(CXXFLAGS) -c $< -o $(buildir)/cc$*.o" > $@
+	@sed -i '1s/^/$(subst /,\/,$(buildir)/cc)/' $@
+	@echo "Creating make file... $@"
 
-$(filter-out $(OBJS_CXX2),$(OBJS_CXX1)): $(buildir)/%.o : $(srcdir)/%.cc $(buildir)/include-lists/include-listcc_%.txt ./headersearch.sh
-	@./headersearch.sh $(filter %.txt,$^) $<
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+$(MK_CXX2): $(buildir)/Make-list/makecc-%.mk : $(srcdir)/%.cpp dependlist.sh
+	@mkdir -p $(dir $@)
+	@./dependlist.sh "$<" "$(CXX) $(CXXFLAGS) -c $< -o $(buildir)/cc$*.o" > $@
+	@sed -i '1s/^/$(subst /,\/,$(buildir)/cc)/' $@
+	@echo "Creating make file... $@"
 
+# $(OBJS_C): $(buildir)/c%.o : $(buildir)/Make-list/makec-%.mk
+# 	@$(MAKE) -C $(CURDIR) -f $< $(MAKEFLAGS)
+#
+# $(OBJS_CXX): $(buildir)/cc%.o : $(buildir)/Make-list/makecc-%.mk
+# 	@$(MAKE) -C $(CURDIR) -f $< $(MAKEFLAGS)
 
-$(OBJS_CXX2): $(buildir)/%.o : $(srcdir)/%.cpp $(buildir)/include-lists/include-listcpp_%.txt ./headersearch.sh
-	@./headersearch.sh $(filter %.txt,$^) $<
-	$(CXX) $(CXXFLAGS) -c $< -o $@
+include $(MK_C) $(MK_CXX)
 
-$(buildir)/include-lists/include-listc_%.txt: $(srcdir)/%.c dependlist.sh
-	mkdir -p $(dir $@)
-	./dependlist.sh $< > $@
-
-$(buildir)/include-lists/include-listcc_%.txt: $(srcdir)/%.cc dependlist.sh
-	mkdir -p $(dir $@)
-	./dependlist.sh $< > $@
-
-$(buildir)/include-lists/include-listcpp_%.txt: $(srcdir)/%.cpp dependlist.sh
-	mkdir -p $(dir $@)
-	./dependlist.sh $< > $@
-
-#=====================================================
+#==================================================================================
 
 clean:
 	rm -rf $(buildir)
@@ -139,19 +153,17 @@ clean:
 clean-c:
 	rm -f $(OBJS_C)
 	rm -f $(buildir)/$(prog_name)
-	rm -f $(buildir)/include-lists/include-listc_*.txt
+	rm -f $(buildir)/include-lists/makec-*.mk
 .PHONY: clean-c
 
 clean-c++:
 	rm -f $(OBJS_CXX)
 	rm -f $(buildir)/$(cxxprog_name)
-	rm -f $(buildir)/include-lists/include-listcc_*.txt
-	rm -f $(buildir)/include-lists/include-listcpp_*.txt
+	rm -f $(buildir)/Make-list/makecc_*.mk
 .PHONY: clean-c++
 
 clean-all: clean
 	rm -f ./dependlist.sh
-	rm -f ./headersearch.sh
 .PHONY: clean-all
 
 uninstall-c:
@@ -167,90 +179,66 @@ uninstall: uninstall-c uninstall-c++
 
 help:
 	@echo "The follwing targets may be given..."
-	@echo "...install"
-	@echo "...install-c"
-	@echo "...install-c++"
-	@echo "...build"
-	@echo "...build-c"
-	@echo "...build-c++"
-	@echo "...uninstall"
-	@echo "...uninstall-c"
-	@echo "...uninstall-c++"
-	@echo "...clean"
-	@echo "...clean-c"
-	@echo "...clean-c++"
-	@echo "...clean-all"
+	@echo -e "\t...install"
+	@echo -e "\t...install-c"
+	@echo -e "\t...install-c++"
+	@echo -e "\t...build"
+	@echo -e "\t...build-c"
+	@echo -e "\t...build-c++"
+	@echo -e "\t...uninstall"
+	@echo -e "\t...uninstall-c"
+	@echo -e "\t...uninstall-c++"
+	@echo -e "\t...clean"
+	@echo -e "\t...clean-c"
+	@echo -e "\t...clean-c++"
+	@echo -e "\t...clean-all"
 	@echo "Other options"
-	@echo "...depend"
-	@echo "...debug"
-	@echo "...help"
+	@echo -e "\t...depend"
+	@echo -e "\t...depend-c"
+	@echo -e "\t...depend-c++"
+	@echo -e "\t...debug"
+	@echo -e "\t...help"
 .PHONY: help
 
 hash := \#
-depend: dependlist.sh
-	mkdir -p $(buildir)/include-lists
-	for file in $(srcdir)/*.c ; do \
+depend: depend-c depend-c++
+.PHONY: depend
+
+depend-c: dependlist.sh
+	@mkdir -p $(buildir)/Make-list
+	@for file in $(srcdir)/*.c; do \
 		name=$${file$(hash)$(hash)*/}; \
-		./dependlist.sh "$$file" > $(buildir)/include-lists/include-listc_$${name%.c}.txt; \
-	done
-	for file in $(srcdir)/*.cc ; do \
-		name=$${file$(hash)$(hash)*/}; \
-		./dependlist.sh "$$file" > $(buildir)/include-lists/include-listcc_$${name%.cc}.txt; \
-	done
-	for file in $(srcdir)/*.cpp ; do \
-		name=$${file$(hash)$(hash)*/}; \
-		./dependlist.sh "$$file" > $(buildir)/include-lists/include-listcc_$${name%.cpp}.txt; \
-		mv $(buildir)/include-lists/include-listcc_$${name%.cpp}.txt -T $(buildir)/include-lists/include-listpp_$${name%.cpp}.txt; \
+		./dependlist.sh "$$file" "$(CC) $(CFLAGS) -c $$file -o $(buildir)/c$${name%.c}.o" > $(buildir)/Make-list/makec-$${name%.c}.mk; \
+		sed -i '1s/^/$(subst /,\/,$(buildir))\//' $(buildir)/Make-list/makec-$${name%.c}.mk; \
+		echo "Creating Make file... \"$(buildir)/Make-list/makec-$${name%.c}.mk\""; \
 	done
 .PHONY: depend
+
+depend-c++: dependlist.sh
+	@mkdir -p $(buildir)/Make-list
+	@for file in $(srcdir)/*.cc; do \
+		name=$${file$(hash)$(hash)*/}; \
+		./dependlist.sh "$$file" "$(CC) $(CFLAGS) -c $$file -o $(buildir)/cc$${name%.cc}.o" > $(buildir)/Make-list/makecc-$${name%.cc}.mk; \
+		sed -i '1s/^/$(subst /,\/,$(buildir))\//' $(buildir)/Make-list/makecc-$${name%.cc}.mk; \
+		echo "Creating Make file... \"$(buildir)/Make-list/makecc-$${name%.cc}.mk\""; \
+	done
+	@for file in $(srcdir)/*.cpp; do \
+		name=$${file$(hash)$(hash)*/}; \
+		./dependlist.sh "$$file" "$(CC) $(CFLAGS) -c $$file -o $(buildir)/cc$${name%.cpp}.o" > $(buildir)/Make-list/makecc-$${name%.cpp}.mk; \
+		sed -i '1s/^/$(subst /,\/,$(buildir))\//' $(buildir)/Make-list/makecc-$${name%.cpp}.mk; \
+		echo "Creating Make file... \"$(buildir)/Make-list/makecc-$${name%.cpp}.mk\""; \
+	done
+.PHONY: depend-c++
 
 dependlist.sh:
 	@echo -e "$(hash)!/bin/bash"\
 	"\n$(hash) Generated by makefile, DO NOT EDIT!"\
 	"\n[ -f \"\$$1\" ] && {"\
-	"\n\tlist=\$$(gcc -M \"\$$1\")"\
-	"\n\t[ \$$? -eq 0 ] && {"\
-	"\n\t\tlist=\$${list//*.o/}"\
-	"\n\t\tlist=\$${list//:/}"\
-	"\n\t\tif [ \"\$${1$(hash)$(hash)*.}\" == \"c\" ]; then"\
-	"\n\t\t\tlist=\$${list//*.c/}"\
-	"\n\t\telif [ \"\$${1$(hash)$(hash)*.}\" == \"cc\" ]; then"\
-	"\n\t\t\tlist=\$${list//*.cc/}"\
-	"\n\t\telif [ \"\$${1$(hash)$(hash)*.}\" == \"cpp\" ]; then"\
-	"\n\t\t\tlist=\$${list//*.cpp/}"\
-	"\n\t\tfi"\
-	"\n\t\tlist=\$$(echo \"\$$list\" | tr -d '\\\\\\')"\
-	"\n\t\tfor file in \$$list; do"\
-	"\n\t\t\tfilelist=\"\$$filelist \$$file\""\
-	"\n\t\tdone"\
-	"\n\t\techo \"\$$filelist\""\
-	"\n\t\texit 0"\
-	"\n\t}"\
+	"\n\tgcc -M \"\$$1\""\
+	"\n\techo -e \"\\\\t\$$2\""\
+	"\n\texit 0"\
+	"\n} || {"\
 	"\n\texit 1"\
-	"\n} || {"\
-	"\n\texit 2"\
-	"\n}"\
-	"\nexit 0"> dependlist.sh
-	chmod a+x dependlist.sh
-
-headersearch.sh:
-	@echo -e "$(hash)!/bin/bash"\
-	"\n$(hash) Generated by makefile, DO NOT EDIT!"\
-	"\n[ -f \"\$$1\" ] && {"\
-	"\n\tfilelist=\$$(cat \"\$$1\")"\
-	"\n} || {"\
-	"\n\texit 2"\
-	"\n}"\
-	"\nfor file in \$$filelist; do"\
-	"\n\techo \"Searching for header \\\"\$$file\\\" included from \\\"\$$2\\\"...\""\
-	"\n\t[ -f \"\$$file\" ] && {"\
-	"\n\t\techo \"Found header \\\"\$$file\\\"...\""\
-	"\n\t} || {"\
-	"\n\t\techo \"Header \\\"\$$file\\\" not found\""\
-	"\n\t\techo \"Compilation terminated\""\
-	"\n\t\texit 1"\
-	"\n\t}"\
-	"\ndone"\
-	"\nexit 0" > headersearch.sh
-	chmod a+x headersearch.sh
-
+	"\n}" >> dependlist.sh
+	@chmod u+x,g+x dependlist.sh
+	@echo "srcipt: dependlist.sh generated."

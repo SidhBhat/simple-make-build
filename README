@@ -17,7 +17,7 @@ This would represent the structure:
         |-<Makefile>
         |-<helper scripts>
 
-the following variables give more control over the build proccess
+The following variables give more control over the build proccess
 #====Compiler flags====#
 CC		(defualt 'gcc')
 CLIBS		(defualt no value)
@@ -36,4 +36,5 @@ cxxprog_name	(defualt 'maincxx')
 The variables:
 srcdir		(value './src')
 buildir		(value './build')
+...etc
 Are not meant to be set from commandline!
