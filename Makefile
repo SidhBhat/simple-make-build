@@ -140,27 +140,27 @@ endif
 $(buildir)%.mk : $(srcdir)%.c
 	@mkdir -p $(@D)
 ifndef SHARED
-	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$(CC) $(CFLAGS) -c -o $(buildir)c$*.o $<\n") }' > $@
+	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$$(CC) $$(CFLAGS) -c -o $(buildir)c$*.o $<\n") }' > $@
 else
-	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$(CC) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CFLAGS)) -c -o $(buildir)c$*.o $<\n") }' > $@
+	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$$(CC) $$(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$$(CFLAGS)) -c -o $(buildir)c$*.o $<\n") }' > $@
 endif
 	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
 
 $(buildir)pp%.mk : $(srcdir)%.cpp
 	@mkdir -p $(@D)
 ifndef SHARED
-	@$(CC) -M $< -MQ $(buildir)cpp$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(CXXFLAGS) -c -o $(buildir)cpp$*.o $<")}' > $@
+	@$(CC) -M $< -MQ $(buildir)cpp$*.o | awk '{ print $$0 } END { printf("\t$$(CXX) $$(CXXFLAGS) -c -o $(buildir)cpp$*.o $<")}' > $@
 else
-	@$(CC) -M $< -MQ $(buildir)cpp$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CXXFLAGS)) -c -o $(buildir)cpp$*.o $<")}' > $@
+	@$(CC) -M $< -MQ $(buildir)cpp$*.o | awk '{ print $$0 } END { printf("\t$$(CXX) $$(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$$(CXXFLAGS)) -c -o $(buildir)cpp$*.o $<")}' > $@
 endif
 	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
 
 $(buildir)xx%.mk : $(srcdir)%.cxx
 	@mkdir -p $(@D)
 ifndef SHARED
-	@$(CC) -M $< -MQ $(buildir)cxx$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(CXXFLAGS) -c -o $(buildir)cxx$*.o $<")}' > $@
+	@$(CC) -M $< -MQ $(buildir)cxx$*.o | awk '{ print $$0 } END { printf("\t$$(CXX) $$(CXXFLAGS) -c -o $(buildir)cxx$*.o $<")}' > $@
 else
-	@$(CC) -M $< -MQ $(buildir)cxx$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CXXFLAGS)) -c -o $(buildir)cxx$*.o $<")}' > $@
+	@$(CC) -M $< -MQ $(buildir)cxx$*.o | awk '{ print $$0 } END { printf("\t$$(CXX) $$(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$$(CXXFLAGS)) -c -o $(buildir)cxx$*.o $<")}' > $@
 endif
 	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
 
@@ -168,9 +168,9 @@ endif
 $(buildir)cc%.mk : $(srcdir)%.cc
 	@mkdir -p $(@D)
 ifndef SHARED
-	@$(CC) -M $< -MQ $(buildir)cc$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(CXXFLAGS) -c -o $(buildir)cc$*.o $<")}' > $@
+	@$(CC) -M $< -MQ $(buildir)cc$*.o | awk '{ print $$0 } END { printf("\t$$(CXX) $$(CXXFLAGS) -c -o $$(buildir)cc$*.o $<")}' > $@
 else
-	@$(CC) -M $< -MQ $(buildir)cc$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CXXFLAGS)) -c -o $(buildir)cc$*.o $<")}' > $@
+	@$(CC) -M $< -MQ $(buildir)cc$*.o | awk '{ print $$0 } END { printf("\t$$(CXX) $$(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$$(CXXFLAGS)) -c -o $(buildir)cc$*.o $<")}' > $@
 endif
 	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
 
