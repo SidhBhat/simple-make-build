@@ -193,9 +193,9 @@ uninstall:uninstall-c uninstall-c++
 uninstall-c: FILE = $(DESTDIR)$(bindir)$(prog_name)
 uninstall-c:
 	rm -f $(FILE)
-.PHONY:uninstall
+.PHONY:uninstall-c
 
 uninstall-c++: FILE = $(DESTDIR)$(bindir)$(cxxprog_name)
 uninstall-c++:
 	rm -f $(FILE)
-.PHONY:uninstall
+.PHONY:uninstall-c++
