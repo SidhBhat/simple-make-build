@@ -58,9 +58,6 @@ OBJS   = $(patsubst $(srcdir)%.cpp,$(buildir)cpp%.o,$(SRCS1)) $(patsubst $(srcdi
 MKS    = $(patsubst $(srcdir)%.cpp,$(buildir)pp%.mk,$(SRCS1)) $(patsubst $(srcdir)%.cxx,$(buildir)xx%.mk,$(SRCS2)) $(patsubst $(srcdir)%.cc,$(buildir)cc%.mk,$(SRCS3))
 #=====================================================
 
-build: build-c build-c++
-.PHONY:build
-
 build: $(buildir)$(prog_name)
 .PHONY: build
 
