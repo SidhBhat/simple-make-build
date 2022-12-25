@@ -97,9 +97,9 @@ endif
 $(buildir)%.mk : $(srcdir)%.c
 	@mkdir -p $(@D)
 ifndef SHARED
-	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$(CC) $(CFLAGS) -c -o $(buildir)c$*.o $<\n") }' > $@
+	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$$(CC) $$(CFLAGS) -c -o $(buildir)c$*.o $<\n") }' > $@
 else
-	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$(CC) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CFLAGS)) -c -o $(buildir)c$*.o $<\n") }' > $@
+	@$(CC) -M $< -MQ $(buildir)c$*.o | awk '{ print $$0 } END { printf("\t$$(CC) $$(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$$(CFLAGS)) -c -o $(buildir)c$*.o $<\n") }' > $@
 endif
 	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
 
