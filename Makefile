@@ -59,12 +59,14 @@ override INSTALL_DATA     = $(INSTALL) -m 644
 #===================================================
 CXX1SRCS  = $(wildcard $(srcdir)*.cpp)
 CXX2SRCS  = $(wildcard $(srcdir)*.cxx)
-CXXSRCS   = $(CXX1SRCS) $(CXX2SRCS)
-CXXOBJS   = $(patsubst $(srcdir)%.cpp,$(buildir)cpp%.o,$(CXX1SRCS)) $(patsubst $(srcdir)%.cxx,$(buildir)cxx%.o,$(CXX2SRCS))
-CXXMKS    = $(patsubst $(srcdir)%.cpp,$(buildir)pp%.mk,$(CXX1SRCS)) $(patsubst $(srcdir)%.cxx,$(buildir)xx%.mk,$(CXX2SRCS))
+CXX3SRCS  = $(wildcard $(srcdir)*.cc)
+CXXSRCS   = $(CXX1SRCS) $(CXX2SRCS) $(CXX3SRCS)
+CXXOBJS   = $(patsubst $(srcdir)%.cpp,$(buildir)cpp%.o,$(CXX1SRCS)) $(patsubst $(srcdir)%.cxx,$(buildir)cxx%.o,$(CXX2SRCS)) $(patsubst $(srcdir)%.cc,$(buildir)cc%.o,$(CXX3SRCS))
+CXXMKS    = $(patsubst $(srcdir)%.cpp,$(buildir)pp%.mk,$(CXX1SRCS)) $(patsubst $(srcdir)%.cxx,$(buildir)xx%.mk,$(CXX2SRCS)) $(patsubst $(srcdir)%.cc,$(buildir)cc%.mk,$(CXX3SRCS))
 CSRCS     = $(wildcard $(srcdir)*.c)
 COBJS     = $(patsubst $(srcdir)%.c,$(buildir)c%.o,$(CSRCS))
 CMKS      = $(patsubst $(srcdir)%.c,$(buildir)%.mk,$(CSRCS))
+OBJS      = $(COBJS) $(CXXOBJS)
 #=====================================================
 
 build: build-c build-c++
@@ -162,7 +164,18 @@ else
 endif
 	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
 
-ifneq ($(strip $(filter build $(buildir)$(prog_name) $(OBJS),$(MAKECMDGOALS))),)
+
+$(buildir)cc%.mk : $(srcdir)%.cc
+	@mkdir -p $(@D)
+ifndef SHARED
+	@$(CC) -M $< -MQ $(buildir)cc$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(CXXFLAGS) -c -o $(buildir)cc$*.o $<")}' > $@
+else
+	@$(CC) -M $< -MQ $(buildir)cc$*.o | awk '{ print $$0 } END { printf("\t$(CXX) $(filter-out -pie -fpie -Fpie -pic -fpic -Fpic,$(CXXFLAGS)) -c -o $(buildir)cc$*.o $<")}' > $@
+endif
+	@echo -e "\e[32mCreating Makefile \"$@\"\e[0m..."
+
+override build_targets = install install-c install-c++ build build-c build-c++ $(buildir)$(prog_name) $(buildir)$(cxxprog_name) $(OBJS)
+ifneq ($(strip $(filter $(build_targets),$(MAKECMDGOALS))),)
 include $(CMKS) $(CXXMKS)
 else ifeq ($(MAKECMDGOALS),)
 include $(CMKS) $(CXXMKS)
