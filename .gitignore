@@ -4,8 +4,3 @@
 *.so
 #build directory
 build/
-#subdirectories of source
-/src/**/
-
-#the versionlog file
-/versionlog.txt
