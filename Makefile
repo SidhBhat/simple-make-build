@@ -73,7 +73,7 @@ debug:
 	@echo -e "\e[35mC++ Make Files   \e[0m: $(MKS)"
 	@echo -e "\e[35mC++ Object Files \e[0m: $(OBJS)"
 	@echo    "#-------------------------------------------#"
-	@echo -e "\e[35mmakeflages;makegoals\e[0m:$(MAKEFLAGS) ; $(MAKECMDGOALS)"
+	@echo -e "\e[35mmakeflages : makegoals\e[0m:$(MAKEFLAGS) : $(MAKECMDGOALS)"
 .PHONY:debug
 
 help:
